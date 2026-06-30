@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+data/*.db
+data/*.sqlite
+*.log
+.pytest_cache/
+docs/flask-progress-private.md
+docs/flask-progress-private2.md
+docs
