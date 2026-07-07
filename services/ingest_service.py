@@ -1,11 +1,12 @@
 import uuid
 from typing import Any
 
-from models.entities import AnalysisRecord, StoreEvent
+from models.entities import StoreEvent
 from models.interfaces.event_repository import EventRepository
 from schemas.event import IngestRequestSchema, IngestResponseSchema
 from services.db import DbService
 from services.kafka_producer import KafkaProducerService
+from services.model_inference import predict
 from utils.exceptions import ConflictAppError
 from utils.logger import api_logger, kafka_logger
 
@@ -71,8 +72,23 @@ class IngestService:
       created = self._db_service.insert_event(event)
       message = "Event ingested successfully (SQLite fallback)"
 
-    response = {"message": message, "event": created.to_dict()}
+    response = {
+      "message": message,
+      "event": created.to_dict(),
+      "analysis": self._build_inline_analysis(created),
+    }
     return self._response_schema.dump(response)
+
+  def _build_inline_analysis(self, event: StoreEvent) -> dict:
+    """POST /ingest 응답용 mock 분석. DB analyses 테이블에는 저장하지 않는다."""
+    prediction = predict(event)
+    return {
+      "predicted_type": prediction.predicted_type,
+      "sentiment": "neutral",
+      "severity": prediction.severity,
+      "confidence": prediction.confidence,
+      "source": "rule-based",
+    }
 
   def ingest_from_kafka_payload(self, payload: dict[str, Any]) -> StoreEvent:
     event = StoreEvent(

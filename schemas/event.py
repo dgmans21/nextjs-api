@@ -39,9 +39,18 @@ class IngestRequestSchema(Schema):
   timestamp = fields.Str(load_default=None)
 
 
+class IngestAnalysisSchema(Schema):
+  predicted_type = fields.Str(load_default=None)
+  sentiment = fields.Str(load_default=None)
+  severity = fields.Str(validate=validate.OneOf(SEVERITY_CHOICES), load_default=None)
+  confidence = fields.Float(load_default=None)
+  source = fields.Str(load_default=None)
+
+
 class IngestResponseSchema(Schema):
   message = fields.Str(required=True)
   event = fields.Nested(StoreEventSchema, required=True)
+  analysis = fields.Nested(IngestAnalysisSchema, required=True)
 
 
 class EventIdParamSchema(Schema):
