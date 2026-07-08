@@ -63,3 +63,14 @@ class Config:
       str(MYKAFKAKERAS_DIR / "models" / "case.1" / "class_map.json"),
     )
   )
+
+  # Hugging Face (klue/bert-base) — mykafkakeras/models/case.2/
+  INFERENCE_BACKEND = os.getenv("INFERENCE_BACKEND", "auto").lower()
+  HF_ENABLED = os.getenv("HF_ENABLED", "1") == "1"
+  HF_MODEL_DIR = _resolve_path(
+    os.getenv(
+      "HF_MODEL_DIR",
+      str(MYKAFKAKERAS_DIR / "models" / "case.2" / "hf-klue-bert-v1"),
+    )
+  )
+  HF_MAX_LENGTH = int(os.getenv("HF_MAX_LENGTH", "128"))

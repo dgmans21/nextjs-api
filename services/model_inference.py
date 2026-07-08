@@ -2,8 +2,10 @@ from dataclasses import dataclass
 
 from config import Config
 from models.entities import StoreEvent
-from services import keras_predictor
+from services import hf_predictor, keras_predictor
 from utils.logger import api_logger
+
+_active_ml_backend: str | None = None
 
 
 @dataclass
@@ -89,11 +91,23 @@ _RULES: list[dict] = [
 
 
 def init_inference(config: Config) -> None:
-  if not config.KERAS_ENABLED:
-    api_logger.info("Keras inference disabled (KERAS_ENABLED=0)")
-    return
+  global _active_ml_backend
+  _active_ml_backend = None
+  backend = config.INFERENCE_BACKEND
 
-  keras_predictor.init_keras_predictor(config.KERAS_MODEL_PATH, config.KERAS_CLASS_MAP_PATH)
+  if backend in ("auto", "hf") and config.HF_ENABLED:
+    if hf_predictor.init_hf_predictor(config.HF_MODEL_DIR, config.HF_MAX_LENGTH):
+      _active_ml_backend = "hf"
+      api_logger.info("Inference backend: hf")
+      return
+
+  if backend in ("auto", "keras") and config.KERAS_ENABLED:
+    if keras_predictor.init_keras_predictor(config.KERAS_MODEL_PATH, config.KERAS_CLASS_MAP_PATH):
+      _active_ml_backend = "keras"
+      api_logger.info("Inference backend: keras")
+      return
+
+  api_logger.info("Inference backend: rule-based only (no ML model loaded)")
 
 
 def _meta_for_type(predicted_type: str) -> dict:
@@ -142,7 +156,16 @@ def predict(event: StoreEvent) -> PredictionResult:
     )
   ).lower()
 
-  if keras_predictor.is_ready() and message:
+  if _active_ml_backend == "hf" and message:
+    hf_result = hf_predictor.predict_message(message)
+    if hf_result is not None:
+      return _from_type(
+        hf_result["event_type"],
+        hf_result["confidence"],
+        "hf",
+      )
+
+  if _active_ml_backend == "keras" and message:
     keras_result = keras_predictor.predict_message(message)
     if keras_result is not None:
       return _from_type(
