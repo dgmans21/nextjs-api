@@ -7,6 +7,13 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 
+def _resolve_path(value: str, base: Path = BASE_DIR) -> Path:
+  path = Path(value)
+  if not path.is_absolute():
+    path = base / path
+  return path.resolve()
+
+
 class Config:
   FLASK_ENV = os.getenv("FLASK_ENV", "development")
   DEBUG = os.getenv("FLASK_DEBUG", "0") == "1"
@@ -39,3 +46,20 @@ class Config:
   KAFKA_ENABLED = os.getenv("KAFKA_ENABLED", "0") == "1"
   DOCS_DIR = os.getenv("DOCS_DIR", str(BASE_DIR / "data" / "docs"))
   LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+  MYKAFKAKERAS_DIR = _resolve_path(
+    os.getenv("MYKAFKAKERAS_DIR", str(BASE_DIR.parent / "mykafkakeras"))
+  )
+  KERAS_ENABLED = os.getenv("KERAS_ENABLED", "1") == "1"
+  KERAS_MODEL_PATH = _resolve_path(
+    os.getenv(
+      "KERAS_MODEL_PATH",
+      str(MYKAFKAKERAS_DIR / "models" / "case.1" / "event_type_v1.keras"),
+    )
+  )
+  KERAS_CLASS_MAP_PATH = _resolve_path(
+    os.getenv(
+      "KERAS_CLASS_MAP_PATH",
+      str(MYKAFKAKERAS_DIR / "models" / "case.1" / "class_map.json"),
+    )
+  )

@@ -32,7 +32,7 @@ class AnalysisService:
       sentiment="neutral",
       severity=prediction.severity,
       confidence=prediction.confidence,
-      source=f"rule-based:{prediction.summary}",
+      source=f"{prediction.source}:{prediction.summary}",
     )
     self._db_service.update_analysis(analysis)
 
@@ -55,6 +55,6 @@ class AnalysisService:
 
   def _analysis_to_response(self, analysis: AnalysisRecord) -> dict:
     payload = analysis.to_dict()
-    if payload.get("source", "").startswith("rule-based:"):
-      payload["source"] = "rule-based"
+    if payload.get("source", "").startswith(("rule-based:", "keras:")):
+      payload["source"] = payload["source"].split(":", 1)[0]
     return payload

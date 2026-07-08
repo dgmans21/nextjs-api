@@ -7,6 +7,9 @@ Run:
 
 import json
 import logging
+import os
+
+os.environ.setdefault("PYTHONUTF8", "1")
 
 from config import Config
 from database.factory import create_database_adapter
@@ -14,7 +17,7 @@ from models.entities import AnalysisRecord, StoreEvent
 from models.repositories.analysis_repository import AnalysisRepositoryImpl
 from models.repositories.event_repository import EventRepositoryImpl
 from services.db import DbService
-from services.model_inference import predict
+from services.model_inference import init_inference, predict
 from utils.logger import kafka_logger
 
 
@@ -48,7 +51,7 @@ def process_event(db_service: DbService, analysis_repository: AnalysisRepository
     sentiment="neutral",
     severity=prediction.severity,
     confidence=prediction.confidence,
-    source=f"rule-based:{prediction.summary}",
+    source=f"{prediction.source}:{prediction.summary}",
   )
   db_service.update_analysis(analysis)
 
@@ -74,6 +77,8 @@ def run_consumer(config: Config) -> None:
   if not config.KAFKA_ENABLED:
     kafka_logger.error("KAFKA_ENABLED=0 — consumer cannot start")
     return
+
+  init_inference(config)
 
   try:
     from kafka import KafkaConsumer

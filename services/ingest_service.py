@@ -80,14 +80,14 @@ class IngestService:
     return self._response_schema.dump(response)
 
   def _build_inline_analysis(self, event: StoreEvent) -> dict:
-    """POST /ingest 응답용 mock 분석. DB analyses 테이블에는 저장하지 않는다."""
+    """POST /ingest 응답용 인라인 분석. DB analyses 테이블에는 저장하지 않는다."""
     prediction = predict(event)
     return {
       "predicted_type": prediction.predicted_type,
       "sentiment": "neutral",
       "severity": prediction.severity,
       "confidence": prediction.confidence,
-      "source": "rule-based",
+      "source": prediction.source,
     }
 
   def ingest_from_kafka_payload(self, payload: dict[str, Any]) -> StoreEvent:

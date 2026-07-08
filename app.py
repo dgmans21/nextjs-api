@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("PYTHONUTF8", "1")
+
 from flask import Flask, jsonify, render_template_string
 from flask_cors import CORS
 
@@ -20,6 +24,7 @@ from services.container import (
   create_report_service,
   create_tasks_service,
 )
+from services.model_inference import init_inference
 from services.seed import seed_events
 from utils import api_logger, register_error_handlers
 from utils.logger import db_logger, kafka_logger, llm_logger
@@ -58,6 +63,7 @@ def configure_logging(config: Config) -> None:
 def create_app(config: Config | None = None) -> Flask:
   app_config = config or Config()
   configure_logging(app_config)
+  init_inference(app_config)
 
   app = Flask(__name__)
   app.config.from_object(app_config)
